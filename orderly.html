@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orderly – Sorting Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4ff;
+    --bg2: #e4eaff;
+    --bg3: #d6dfff;
+    --surface: rgba(255,255,255,0.75);
+    --surface2: rgba(255,255,255,0.5);
+    --border: rgba(100,120,220,0.18);
+    --text: #12154a;
+    --text2: #3a3f7a;
+    --text3: #6b72b8;
+    --accent: #3a5bff;
+    --accent2: #7c3aff;
+    --accent3: #00c2ff;
+    --bar-default: #1a3aff;
+    --bar-compare: #ff8c00;
+    --bar-sorted: #00d084;
+    --bar-pivot: #ff3a6e;
+    --bar-min: #a855f7;
+    --shadow: 0 8px 40px rgba(60,80,200,0.13);
+    --shadow2: 0 2px 16px rgba(60,80,200,0.10);
+    --btn-grad: linear-gradient(135deg,#3a5bff,#7c3aff);
+    --hero-grad: linear-gradient(135deg,#e8eeff 0%,#f5f0ff 50%,#e0f0ff 100%);
+    --glass: rgba(255,255,255,0.6);
+  }
+  [data-theme="dark"] {
+    --bg: #0a0d1f;
+    --bg2: #0f1330;
+    --bg3: #141840;
+    --surface: rgba(20,25,60,0.80);
+    --surface2: rgba(20,25,60,0.55);
+    --border: rgba(100,140,255,0.15);
+    --text: #e8eaff;
+    --text2: #a8b0f0;
+    --text3: #6672cc;
+    --accent: #5b7fff;
+    --accent2: #a070ff;
+    --accent3: #00d4ff;
+    --bar-default: #6ab0ff;
+    --shadow: 0 8px 40px rgba(0,0,0,0.45);
+    --shadow2: 0 2px 16px rgba(0,0,0,0.3);
+    --btn-grad: linear-gradient(135deg,#3a5bff,#9b3aff);
+    --hero-grad: linear-gradient(135deg,#0a0d1f 0%,#10133a 50%,#0d1535 100%);
+    --glass: rgba(20,25,60,0.7);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  /* ============ LANDING PAGE ============ */
+  #landing {
+    min-height: 100vh;
+    background: var(--hero-grad);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .orbs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    animation: floatOrb 8s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 400px; height: 400px; background: radial-gradient(circle,#6ab0ff,transparent); top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 350px; height: 350px; background: radial-gradient(circle,#a070ff,transparent); bottom: -80px; right: -80px; animation-delay: 2s; }
+  .orb3 { width: 250px; height: 250px; background: radial-gradient(circle,#00d4ff,transparent); top: 40%; left: 60%; animation-delay: 4s; }
+  @keyframes floatOrb { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,40px) scale(1.1); } }
+
+  .landing-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .landing-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 18px;
+    backdrop-filter: blur(12px);
+    animation: fadeSlideDown 0.6s ease both;
+  }
+
+  .landing-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(72px, 12vw, 130px);
+    font-weight: 900;
+    letter-spacing: -3px;
+    line-height: 0.95;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: fadeSlideDown 0.7s 0.1s ease both;
+    filter: drop-shadow(0 4px 30px rgba(90,100,255,0.3));
+  }
+
+  .landing-sub {
+    font-size: 18px;
+    color: var(--text2);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    max-width: 420px;
+    animation: fadeSlideDown 0.7s 0.2s ease both;
+  }
+
+  .btn-get-started {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 16px 44px;
+    border: none;
+    border-radius: 100px;
+    background: var(--btn-grad);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 6px 32px rgba(90,100,255,0.35);
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: fadeSlideDown 0.7s 0.3s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-get-started::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,rgba(255,255,255,0.18),transparent);
+    border-radius: inherit;
+  }
+  .btn-get-started:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 12px 40px rgba(90,100,255,0.45); }
+  .btn-get-started:active { transform: scale(0.98); }
+
+  .mini-bars {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    height: 60px;
+    animation: fadeSlideDown 0.7s 0.4s ease both;
+  }
+  .mini-bar {
+    width: 10px;
+    border-radius: 4px 4px 0 0;
+    background: var(--btn-grad);
+    opacity: 0.5;
+    animation: barPulse 1.5s ease-in-out infinite alternate;
+  }
+  .mini-bar:nth-child(1){ height: 30%; animation-delay:0s; }
+  .mini-bar:nth-child(2){ height: 55%; animation-delay:0.1s; }
+  .mini-bar:nth-child(3){ height: 80%; animation-delay:0.2s; }
+  .mini-bar:nth-child(4){ height: 45%; animation-delay:0.3s; }
+  .mini-bar:nth-child(5){ height: 65%; animation-delay:0.4s; }
+  .mini-bar:nth-child(6){ height: 90%; animation-delay:0.5s; }
+  .mini-bar:nth-child(7){ height: 35%; animation-delay:0.6s; }
+  @keyframes barPulse { from { opacity: 0.3; } to { opacity: 0.7; } }
+
+  @keyframes fadeSlideDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ============ THEME TOGGLE ============ */
+  .theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 20px;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow2);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .theme-toggle:hover { transform: scale(1.1); }
+
+  /* ============ MAIN APP ============ */
+  #app { display: none; min-height: 100vh; }
+
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow2);
+  }
+
+  .app-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -1px;
+  }
+
+  .top-actions { display: flex; gap: 12px; align-items: center; }
+
+  .btn-race {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 22px;
+    border: none;
+    border-radius: 100px;
+    background: linear-gradient(135deg,#ff3a6e,#ff8c00);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255,80,100,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .btn-race:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,80,100,0.4); }
+  .btn-race svg { width: 16px; height: 16px; }
+
+  /* Main layout */
+  .app-main {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 28px;
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow2);
+    transition: background 0.4s, border 0.4s;
+  }
+
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+  }
+
+  /* Sort selector */
+  .sort-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .sort-btn {
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .sort-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+  .sort-btn.active {
+    background: var(--btn-grad);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(90,100,255,0.35);
+    transform: translateY(-1px);
+  }
+
+  /* Complexity card */
+  .complexity-card { display: none; }
+  .complexity-card.visible { display: block; }
+  .sort-name-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .sort-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .complexity-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .complex-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .complex-badge span:first-child { font-size: 9px; color: var(--text3); letter-spacing: 1px; }
+  .cb-time { background: rgba(90,100,255,0.12); color: var(--accent); }
+  .cb-space { background: rgba(0,210,130,0.12); color: #00d084; }
+  .cb-worst { background: rgba(255,80,100,0.12); color: #ff3a6e; }
+
+  /* Input card */
+  .input-area {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border 0.2s;
+    resize: none;
+  }
+  .input-area:focus { border-color: var(--accent); }
+  .input-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* Speed slider */
+  .speed-row { display: flex; align-items: center; gap: 12px; }
+  .speed-label { font-size: 12px; color: var(--text3); min-width: 40px; font-family: 'Space Mono',monospace; }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 2px 10px rgba(90,100,255,0.4);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  /* Control buttons */
+  .ctrl-row { display: flex; gap: 10px; }
+  .btn-ctrl {
+    flex: 1;
+    padding: 11px 0;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-start { background: var(--btn-grad); color: #fff; box-shadow: 0 4px 16px rgba(90,100,255,0.3); }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(90,100,255,0.4); }
+  .btn-reset { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text2); }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ctrl:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ============ VISUALIZER ============ */
+  .viz-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 28px;
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .viz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .viz-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .viz-stats {
+    display: flex;
+    gap: 20px;
+  }
+  .stat-box {
+    text-align: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 16px;
+  }
+  .stat-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-lbl { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+
+  #bar-container {
+    flex: 1;
+    min-height: 360px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    padding: 16px 0 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 6px 6px 0 0;
+    background: var(--bar-default);
+    transition: height 0.12s cubic-bezier(0.34,1.56,0.64,1), background 0.18s ease;
+    position: relative;
+    transform-origin: bottom;
+    animation: barSpawn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes barSpawn {
+    from { transform: scaleY(0); opacity: 0; }
+    to { transform: scaleY(1); opacity: 1; }
+  }
+  .bar.comparing { background: var(--bar-compare) !important; box-shadow: 0 0 12px rgba(255,140,0,0.5); }
+  .bar.sorted { background: var(--bar-sorted) !important; box-shadow: 0 0 10px rgba(0,208,132,0.4); }
+  .bar.pivot { background: var(--bar-pivot) !important; box-shadow: 0 0 12px rgba(255,58,110,0.5); }
+  .bar.minimum { background: var(--bar-min) !important; box-shadow: 0 0 12px rgba(168,85,247,0.5); }
+  .bar.swapping { background: #ffd700 !important; box-shadow: 0 0 14px rgba(255,215,0,0.6); animation: swapBounce 0.15s ease; }
+  @keyframes swapBounce { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(0.92)} }
+
+  .empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 48px; opacity: 0.4; }
+  .empty-text { font-size: 15px; font-weight: 500; }
+
+  .completion-banner {
+    display: none;
+    background: linear-gradient(135deg,rgba(0,208,132,0.15),rgba(0,210,255,0.1));
+    border: 1px solid rgba(0,208,132,0.3);
+    border-radius: 12px;
+    padding: 12px 20px;
+    text-align: center;
+    color: #00d084;
+    font-weight: 600;
+    font-size: 15px;
+    animation: fadeIn 0.5s ease;
+  }
+  .completion-banner.show { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ============ RACE PAGE ============ */
+  #race-page {
+    display: none;
+    min-height: 100vh;
+    background: var(--bg);
+    flex-direction: column;
+  }
+  #race-page.active { display: flex; }
+
+  .race-header {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .race-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 900;
+    background: linear-gradient(135deg,#ff3a6e,#ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .btn-back {
+    font-size: 14px;
+    padding: 9px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+  }
+  .btn-back:hover { border-color: var(--accent); color: var(--accent); }
+
+  .race-controls {
+    padding: 20px 32px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .race-select-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .race-sort-cb {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .race-sort-cb:has(input:checked) {
+    border-color: var(--accent);
+    background: rgba(90,100,255,0.1);
+    color: var(--accent);
+  }
+  .race-sort-cb input { display: none; }
+  .race-sort-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .btn-race-start {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 100px;
+    background: linear-gradient(135deg,#ff3a6e,#ff8c00);
+    color: #fff;
+    font-family: 'DM Sans',sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255,80,100,0.3);
+    transition: all 0.2s;
+  }
+  .btn-race-start:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,80,100,0.4); }
+  .btn-race-reset {
+    padding: 10px 22px;
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: 'DM Sans',sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .race-speed-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text3); }
+  .race-speed-row input[type=range] { width: 100px; }
+
+  .race-grid {
+    flex: 1;
+    display: grid;
+    padding: 24px 32px;
+    gap: 20px;
+    overflow-y: auto;
+  }
+  .race-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .race-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .race-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .race-grid.cols-1 { grid-template-columns: 1fr; }
+
+  .race-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: var(--shadow2);
+    min-height: 280px;
+    position: relative;
+  }
+  .race-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .race-panel-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .race-panel-stats {
+    display: flex;
+    gap: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .race-bar-container {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    min-height: 200px;
+  }
+  .race-bar {
+    flex: 1;
+    min-width: 3px;
+    border-radius: 4px 4px 0 0;
+    background: var(--bar-default);
+    transition: height 0.1s ease, background 0.15s;
+    transform-origin: bottom;
+  }
+  .race-bar.comparing { background: var(--bar-compare) !important; }
+  .race-bar.sorted { background: var(--bar-sorted) !important; }
+  .race-bar.swapping { background: #ffd700 !important; }
+  .race-panel-badge {
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+    letter-spacing: 1px;
+  }
+  .badge-winner { display: block; background: linear-gradient(135deg,#00d084,#00c2ff); color: #fff; }
+  .badge-done { display: block; background: rgba(0,208,132,0.15); color: #00d084; border: 1px solid rgba(0,208,132,0.3); }
+
+  .race-input-group { display: flex; align-items: center; gap: 10px; }
+  .race-input {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    width: 280px;
+  }
+  .race-input:focus { border-color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .app-main { grid-template-columns: 1fr; }
+    .race-grid.cols-2, .race-grid.cols-3, .race-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+
+<!-- ====== LANDING PAGE ====== -->
+<div id="landing">
+  <div class="orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="landing-content">
+    <div class="landing-badge">✦ Sorting Visualizer</div>
+    <div class="landing-title">Orderly</div>
+    <div class="mini-bars">
+      <div class="mini-bar"></div><div class="mini-bar"></div><div class="mini-bar"></div>
+      <div class="mini-bar"></div><div class="mini-bar"></div><div class="mini-bar"></div>
+      <div class="mini-bar"></div>
+    </div>
+    <div class="landing-sub">Watch algorithms breathe life into chaos — one comparison at a time.</div>
+    <button class="btn-get-started" onclick="showApp()">Get Started →</button>
+  </div>
+</div>
+
+<!-- ====== MAIN APP ====== -->
+<div id="app">
+  <div class="top-bar">
+    <div class="app-logo">Orderly</div>
+    <div class="top-actions">
+      <button class="btn-race" onclick="showRace()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        Race Mode
+      </button>
+    </div>
+  </div>
+
+  <div class="app-main">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- Sort Selector -->
+      <div class="card">
+        <div class="card-label">Select Algorithm</div>
+        <div class="sort-grid">
+          <button class="sort-btn" onclick="selectSort('bubble')">Bubble</button>
+          <button class="sort-btn" onclick="selectSort('insertion')">Insertion</button>
+          <button class="sort-btn" onclick="selectSort('selection')">Selection</button>
+          <button class="sort-btn" onclick="selectSort('merge')">Merge</button>
+          <button class="sort-btn" onclick="selectSort('quick')">Quick</button>
+          <button class="sort-btn" onclick="selectSort('heap')">Heap</button>
+        </div>
+      </div>
+
+      <!-- Complexity Info -->
+      <div class="card complexity-card" id="complexityCard">
+        <div class="sort-name-big" id="sortNameBig">–</div>
+        <div class="sort-desc" id="sortDesc">–</div>
+        <div class="complexity-row">
+          <div class="complex-badge cb-time">
+            <span>Best / Avg</span>
+            <span id="cTime">–</span>
+          </div>
+          <div class="complex-badge cb-worst">
+            <span>Worst</span>
+            <span id="cWorst">–</span>
+          </div>
+          <div class="complex-badge cb-space">
+            <span>Space</span>
+            <span id="cSpace">–</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="card">
+        <div class="card-label">Input Array</div>
+        <textarea class="input-area" id="arrayInput" rows="2" placeholder="e.g. 5, 3, 8, 1, 9, 2, 7"></textarea>
+        <div class="input-hint">Enter comma-separated numbers or generate randomly</div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button class="btn-ctrl btn-reset" style="flex:1" onclick="generateRandom()">🎲 Random</button>
+        </div>
+      </div>
+
+      <!-- Speed -->
+      <div class="card">
+        <div class="card-label">Animation Speed</div>
+        <div class="speed-row">
+          <span class="speed-label">Slow</span>
+          <input type="range" id="speedSlider" min="1" max="10" value="5">
+          <span class="speed-label">Fast</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="card">
+        <div class="ctrl-row">
+          <button class="btn-ctrl btn-start" id="startBtn" onclick="startSort()">▶ Sort</button>
+          <button class="btn-ctrl btn-reset" id="resetBtn" onclick="resetViz()">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="card">
+        <div class="card-label">Legend</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bar-default)"></div>Default</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bar-compare)"></div>Comparing</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ffd700"></div>Swapping</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bar-pivot)"></div>Pivot</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bar-min)"></div>Minimum</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--bar-sorted)"></div>Sorted</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VISUALIZER -->
+    <div class="viz-panel">
+      <div class="viz-header">
+        <div class="viz-title" id="vizTitle">Select an algorithm to begin</div>
+        <div class="viz-stats">
+          <div class="stat-box">
+            <div class="stat-val" id="compCount">0</div>
+            <div class="stat-lbl">Comparisons</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="swapCount">0</div>
+            <div class="stat-lbl">Swaps</div>
+          </div>
+        </div>
+      </div>
+      <div class="completion-banner" id="completionBanner">✓ Array sorted! All elements in order 🎉</div>
+      <div id="bar-container">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">Enter values and choose an algorithm</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== RACE PAGE ====== -->
+<div id="race-page">
+  <div class="race-header">
+    <div class="race-title">⚡ Race Mode</div>
+    <button class="btn-back" onclick="showApp()">← Back to Visualizer</button>
+  </div>
+  <div class="race-controls">
+    <div class="race-select-group" id="raceSortSelect">
+      <label class="race-sort-cb"><input type="checkbox" value="bubble" checked><div class="race-sort-dot" style="background:#ff8c00"></div>Bubble</label>
+      <label class="race-sort-cb"><input type="checkbox" value="insertion" checked><div class="race-sort-dot" style="background:#3a5bff"></div>Insertion</label>
+      <label class="race-sort-cb"><input type="checkbox" value="selection"><div class="race-sort-dot" style="background:#a855f7"></div>Selection</label>
+      <label class="race-sort-cb"><input type="checkbox" value="merge"><div class="race-sort-dot" style="background:#00d084"></div>Merge</label>
+      <label class="race-sort-cb"><input type="checkbox" value="quick"><div class="race-sort-dot" style="background:#ff3a6e"></div>Quick</label>
+      <label class="race-sort-cb"><input type="checkbox" value="heap"><div class="race-sort-dot" style="background:#00c2ff"></div>Heap</label>
+    </div>
+    <div class="race-input-group">
+      <input class="race-input" id="raceInput" placeholder="e.g. 5,3,8,1,9,2,7,4,6">
+      <button class="btn-race-reset" onclick="raceRandom()">🎲</button>
+    </div>
+    <div class="race-speed-row">
+      Speed:
+      <input type="range" id="raceSpeed" min="1" max="10" value="6">
+    </div>
+    <button class="btn-race-start" onclick="startRace()">🏁 Start Race</button>
+    <button class="btn-race-reset" onclick="resetRace()">↺ Reset</button>
+  </div>
+  <div class="race-grid" id="raceGrid"></div>
+</div>
+
+<script>
+// ========== THEME ==========
+const themeToggle = document.getElementById('themeToggle');
+let isDark = false;
+themeToggle.onclick = () => {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+};
+
+// ========== PAGE NAVIGATION ==========
+function showApp() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('race-page').classList.remove('active');
+}
+function showRace() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('race-page').classList.add('active');
+  raceRandom();
+}
+
+// ========== SORT DATA ==========
+const SORTS = {
+  bubble: {
+    name: 'Bubble Sort',
+    desc: 'Repeatedly steps through the list, compares adjacent elements, and swaps them if out of order. Simple but inefficient for large datasets.',
+    time: 'O(n) / O(n²)',
+    worst: 'O(n²)',
+    space: 'O(1)',
+  },
+  insertion: {
+    name: 'Insertion Sort',
+    desc: 'Builds a sorted array one item at a time by picking each element and placing it in the correct position. Efficient for small or nearly sorted data.',
+    time: 'O(n) / O(n²)',
+    worst: 'O(n²)',
+    space: 'O(1)',
+  },
+  selection: {
+    name: 'Selection Sort',
+    desc: 'Finds the minimum element from the unsorted portion and places it at the beginning. Makes at most n swaps, regardless of input order.',
+    time: 'O(n²) / O(n²)',
+    worst: 'O(n²)',
+    space: 'O(1)',
+  },
+  merge: {
+    name: 'Merge Sort',
+    desc: 'Divides the array into halves, recursively sorts each half, then merges them. Guaranteed O(n log n) performance with stable sorting.',
+    time: 'O(n log n)',
+    worst: 'O(n log n)',
+    space: 'O(n)',
+  },
+  quick: {
+    name: 'Quick Sort',
+    desc: 'Selects a pivot, partitions elements around it, and recursively sorts partitions. One of the fastest sorting algorithms in practice.',
+    time: 'O(n log n)',
+    worst: 'O(n²)',
+    space: 'O(log n)',
+  },
+  heap: {
+    name: 'Heap Sort',
+    desc: 'Builds a max-heap from the data, then extracts the maximum element repeatedly. Combines the best of selection and merge sorts.',
+    time: 'O(n log n)',
+    worst: 'O(n log n)',
+    space: 'O(1)',
+  },
+};
+
+// ========== MAIN VISUALIZER ==========
+let currentSort = null;
+let sorting = false;
+let comparisons = 0, swaps = 0;
+let animationFrames = [];
+
+function selectSort(name) {
+  currentSort = name;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const d = SORTS[name];
+  document.getElementById('complexityCard').classList.add('visible');
+  document.getElementById('sortNameBig').textContent = d.name;
+  document.getElementById('sortDesc').textContent = d.desc;
+  document.getElementById('cTime').textContent = d.time;
+  document.getElementById('cWorst').textContent = d.worst;
+  document.getElementById('cSpace').textContent = d.space;
+  document.getElementById('vizTitle').textContent = d.name;
+
+  if (document.getElementById('arrayInput').value.trim()) renderBars();
+}
+
+function parseArray() {
+  const raw = document.getElementById('arrayInput').value;
+  return raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+}
+
+function generateRandom() {
+  const count = Math.floor(Math.random() * 20) + 15;
+  const arr = Array.from({length: count}, () => Math.floor(Math.random() * 95) + 5);
+  document.getElementById('arrayInput').value = arr.join(', ');
+  renderBars();
+}
+
+function renderBars(arr, states = {}) {
+  const container = document.getElementById('bar-container');
+  const emptyState = document.getElementById('emptyState');
+  const data = arr || parseArray();
+
+  if (!data.length) return;
+  emptyState.style.display = 'none';
+  document.getElementById('completionBanner').classList.remove('show');
+
+  const maxVal = Math.max(...data);
+
+  // Remove existing bars
+  container.querySelectorAll('.bar').forEach(b => b.remove());
+
+  data.forEach((val, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = (val / maxVal * 100) + '%';
+    bar.style.animationDelay = (i * 0.03) + 's';
+    if (states.comparing && states.comparing.includes(i)) bar.classList.add('comparing');
+    if (states.sorted && states.sorted.includes(i)) bar.classList.add('sorted');
+    if (states.pivot === i) bar.classList.add('pivot');
+    if (states.minimum === i) bar.classList.add('minimum');
+    if (states.swapping && states.swapping.includes(i)) bar.classList.add('swapping');
+    container.appendChild(bar);
+  });
+}
+
+function updateBars(arr, states = {}) {
+  const bars = document.querySelectorAll('#bar-container .bar');
+  const maxVal = Math.max(...arr);
+  bars.forEach((bar, i) => {
+    bar.style.height = (arr[i] / maxVal * 100) + '%';
+    bar.className = 'bar';
+    if (states.comparing && states.comparing.includes(i)) bar.classList.add('comparing');
+    if (states.sorted && states.sorted.includes(i)) bar.classList.add('sorted');
+    if (states.pivot === i) bar.classList.add('pivot');
+    if (states.minimum === i) bar.classList.add('minimum');
+    if (states.swapping && states.swapping.includes(i)) bar.classList.add('swapping');
+  });
+  document.getElementById('compCount').textContent = comparisons;
+  document.getElementById('swapCount').textContent = swaps;
+}
+
+function getDelay() {
+  const speed = parseInt(document.getElementById('speedSlider').value);
+  return Math.round(600 / speed);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function startSort() {
+  if (!currentSort) { alert('Please select a sorting algorithm first.'); return; }
+  const arr = parseArray();
+  if (!arr.length) { alert('Please enter values to sort.'); return; }
+
+  comparisons = 0; swaps = 0;
+  sorting = true;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('completionBanner').classList.remove('show');
+  renderBars(arr);
+
+  const a = [...arr];
+  const n = a.length;
+  const sorted = new Set();
+
+  async function doSort() {
+    if (currentSort === 'bubble') {
+      for (let i = 0; i < n - 1; i++) {
+        for (let j = 0; j < n - i - 1; j++) {
+          comparisons++;
+          updateBars(a, { comparing: [j, j+1], sorted: [...sorted] });
+          await sleep(getDelay());
+          if (a[j] > a[j+1]) {
+            [a[j], a[j+1]] = [a[j+1], a[j]];
+            swaps++;
+            updateBars(a, { swapping: [j, j+1], sorted: [...sorted] });
+            await sleep(getDelay());
+          }
+        }
+        sorted.add(n - 1 - i);
+        updateBars(a, { sorted: [...sorted] });
+      }
+      sorted.add(0);
+    }
+    else if (currentSort === 'insertion') {
+      sorted.add(0);
+      for (let i = 1; i < n; i++) {
+        let key = a[i], j = i - 1;
+        comparisons++;
+        updateBars(a, { comparing: [i, j], sorted: [...sorted] });
+        await sleep(getDelay());
+        while (j >= 0 && a[j] > key) {
+          comparisons++;
+          a[j+1] = a[j];
+          swaps++;
+          updateBars(a, { swapping: [j, j+1], sorted: [...sorted] });
+          await sleep(getDelay());
+          j--;
+        }
+        a[j+1] = key;
+        sorted.add(i);
+        updateBars(a, { sorted: [...sorted] });
+        await sleep(getDelay());
+      }
+    }
+    else if (currentSort === 'selection') {
+      for (let i = 0; i < n - 1; i++) {
+        let minIdx = i;
+        for (let j = i + 1; j < n; j++) {
+          comparisons++;
+          updateBars(a, { comparing: [j, minIdx], minimum: minIdx, sorted: [...sorted] });
+          await sleep(getDelay());
+          if (a[j] < a[minIdx]) minIdx = j;
+        }
+        if (minIdx !== i) {
+          [a[i], a[minIdx]] = [a[minIdx], a[i]];
+          swaps++;
+          updateBars(a, { swapping: [i, minIdx], sorted: [...sorted] });
+          await sleep(getDelay());
+        }
+        sorted.add(i);
+        updateBars(a, { sorted: [...sorted] });
+      }
+      sorted.add(n - 1);
+    }
+    else if (currentSort === 'merge') {
+      async function merge(arr, l, m, r) {
+        const left = arr.slice(l, m+1), right = arr.slice(m+1, r+1);
+        let i = 0, j = 0, k = l;
+        while (i < left.length && j < right.length) {
+          comparisons++;
+          updateBars(arr, { comparing: [l+i, m+1+j], sorted: [...sorted] });
+          await sleep(getDelay());
+          if (left[i] <= right[j]) { arr[k++] = left[i++]; }
+          else { arr[k++] = right[j++]; swaps++; }
+          updateBars(arr, { sorted: [...sorted] });
+        }
+        while (i < left.length) { arr[k++] = left[i++]; }
+        while (j < right.length) { arr[k++] = right[j++]; }
+        for (let x = l; x <= r; x++) sorted.add(x);
+        updateBars(arr, { sorted: [...sorted] });
+        await sleep(getDelay());
+      }
+      async function mergeSort(arr, l, r) {
+        if (l < r) {
+          const m = Math.floor((l+r)/2);
+          await mergeSort(arr, l, m);
+          await mergeSort(arr, m+1, r);
+          await merge(arr, l, m, r);
+        }
+      }
+      await mergeSort(a, 0, n-1);
+      for (let x = 0; x < n; x++) sorted.add(x);
+    }
+    else if (currentSort === 'quick') {
+      async function partition(arr, low, high) {
+        const pivot = arr[high];
+        let i = low - 1;
+        for (let j = low; j < high; j++) {
+          comparisons++;
+          updateBars(arr, { comparing: [j, high], pivot: high, sorted: [...sorted] });
+          await sleep(getDelay());
+          if (arr[j] < pivot) {
+            i++;
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+            swaps++;
+            updateBars(arr, { swapping: [i, j], pivot: high, sorted: [...sorted] });
+            await sleep(getDelay());
+          }
+        }
+        [arr[i+1], arr[high]] = [arr[high], arr[i+1]];
+        swaps++;
+        updateBars(arr, { swapping: [i+1, high], sorted: [...sorted] });
+        await sleep(getDelay());
+        return i + 1;
+      }
+      async function quickSort(arr, low, high) {
+        if (low < high) {
+          const pi = await partition(arr, low, high);
+          sorted.add(pi);
+          updateBars(arr, { sorted: [...sorted] });
+          await quickSort(arr, low, pi - 1);
+          await quickSort(arr, pi + 1, high);
+        } else if (low === high) { sorted.add(low); }
+      }
+      await quickSort(a, 0, n-1);
+    }
+    else if (currentSort === 'heap') {
+      async function heapify(arr, n, i) {
+        let largest = i, l = 2*i+1, r = 2*i+2;
+        comparisons++;
+        updateBars(arr, { comparing: [i, l < n ? l : i], sorted: [...sorted] });
+        await sleep(getDelay());
+        if (l < n && arr[l] > arr[largest]) largest = l;
+        if (r < n && arr[r] > arr[largest]) largest = r;
+        if (largest !== i) {
+          [arr[i], arr[largest]] = [arr[largest], arr[i]];
+          swaps++;
+          updateBars(arr, { swapping: [i, largest], sorted: [...sorted] });
+          await sleep(getDelay());
+          await heapify(arr, n, largest);
+        }
+      }
+      for (let i = Math.floor(n/2)-1; i >= 0; i--) await heapify(a, n, i);
+      for (let i = n-1; i > 0; i--) {
+        [a[0], a[i]] = [a[i], a[0]]; swaps++;
+        sorted.add(i);
+        updateBars(a, { swapping: [0, i], sorted: [...sorted] });
+        await sleep(getDelay());
+        await heapify(a, i, 0);
+      }
+      sorted.add(0);
+    }
+
+    // All sorted
+    updateBars(a, { sorted: Array.from({length:n},(_,i)=>i) });
+    document.getElementById('completionBanner').classList.add('show');
+    document.getElementById('startBtn').disabled = false;
+    sorting = false;
+  }
+
+  doSort();
+}
+
+function resetViz() {
+  sorting = false;
+  comparisons = 0; swaps = 0;
+  document.getElementById('compCount').textContent = 0;
+  document.getElementById('swapCount').textContent = 0;
+  document.getElementById('completionBanner').classList.remove('show');
+  document.getElementById('startBtn').disabled = false;
+  const arr = parseArray();
+  if (arr.length) renderBars(arr);
+}
+
+// ========== RACE MODE ==========
+const RACE_COLORS = {
+  bubble: '#ff8c00',
+  insertion: '#3a5bff',
+  selection: '#a855f7',
+  merge: '#00d084',
+  quick: '#ff3a6e',
+  heap: '#00c2ff',
+};
+
+function raceRandom() {
+  const count = Math.floor(Math.random() * 18) + 12;
+  const arr = Array.from({length: count}, () => Math.floor(Math.random() * 90) + 10);
+  document.getElementById('raceInput').value = arr.join(',');
+}
+
+function getRaceArray() {
+  const raw = document.getElementById('raceInput').value;
+  return raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+}
+
+let raceInstances = [];
+
+function resetRace() {
+  raceInstances.forEach(ri => { if (ri.stop) ri.stop(); });
+  raceInstances = [];
+  document.getElementById('raceGrid').innerHTML = '';
+}
+
+function startRace() {
+  resetRace();
+  const baseArr = getRaceArray();
+  if (!baseArr.length) { alert('Enter some values first!'); return; }
+  const selected = Array.from(document.querySelectorAll('#raceSortSelect input:checked')).map(cb => cb.value);
+  if (selected.length < 1) { alert('Select at least one algorithm.'); return; }
+
+  const grid = document.getElementById('raceGrid');
+  const cols = Math.min(selected.length, 3);
+  grid.className = `race-grid cols-${cols}`;
+
+  selected.forEach(name => {
+    const panel = createRacePanel(name, [...baseArr]);
+    grid.appendChild(panel.el);
+    raceInstances.push(panel);
+  });
+
+  // stagger starts
+  raceInstances.forEach((ri, i) => setTimeout(() => ri.start(), i * 80));
+}
+
+function createRacePanel(name, arr) {
+  const color = RACE_COLORS[name];
+  const info = SORTS[name];
+  const n = arr.length;
+  const maxVal = Math.max(...arr);
+
+  const el = document.createElement('div');
+  el.className = 'race-panel';
+  el.innerHTML = `
+    <div class="race-panel-badge" id="badge-${name}"></div>
+    <div class="race-panel-header">
+      <div class="race-panel-name" style="color:${color}">${info.name}</div>
+      <div class="race-panel-stats">
+        <span>Cmps: <b id="rcmp-${name}">0</b></span>
+        <span>Swaps: <b id="rswp-${name}">0</b></span>
+      </div>
+    </div>
+    <div class="race-bar-container" id="rbc-${name}"></div>
+  `;
+
+  const container = el.querySelector(`#rbc-${name}`);
+  const a = [...arr];
+
+  function renderRaceBars(states = {}) {
+    const bars = container.querySelectorAll('.race-bar');
+    if (bars.length !== n) {
+      container.innerHTML = '';
+      a.forEach((val, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'race-bar';
+        bar.style.height = (val / maxVal * 100) + '%';
+        bar.style.background = color;
+        container.appendChild(bar);
+      });
+      return;
+    }
+    bars.forEach((bar, i) => {
+      bar.style.height = (a[i] / maxVal * 100) + '%';
+      bar.style.background = color;
+      bar.className = 'race-bar';
+      if (states.comparing && states.comparing.includes(i)) { bar.style.background = '#ff8c00'; }
+      if (states.swapping && states.swapping.includes(i)) { bar.style.background = '#ffd700'; }
+      if (states.sorted && states.sorted.includes(i)) { bar.style.background = '#00d084'; }
+    });
+  }
+
+  renderRaceBars();
+
+  let stopped = false;
+  let cmps = 0, swpCount = 0;
+  const cmpEl = el.querySelector(`#rcmp-${name}`);
+  const swpEl = el.querySelector(`#rswp-${name}`);
+  const badge = el.querySelector(`#badge-${name}`);
+
+  function getRaceDelay() {
+    const speed = parseInt(document.getElementById('raceSpeed').value);
+    return Math.round(500 / speed);
+  }
+  function sleepR(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  const sorted = new Set();
+
+  async function run() {
+    async function update(states) {
+      if (stopped) return;
+      renderRaceBars(states);
+      cmpEl.textContent = cmps;
+      swpEl.textContent = swpCount;
+      await sleepR(getRaceDelay());
+    }
+
+    if (name === 'bubble') {
+      for (let i = 0; i < n - 1 && !stopped; i++) {
+        for (let j = 0; j < n - i - 1 && !stopped; j++) {
+          cmps++;
+          await update({ comparing: [j, j+1], sorted: [...sorted] });
+          if (a[j] > a[j+1]) { [a[j], a[j+1]] = [a[j+1], a[j]]; swpCount++; await update({ swapping: [j, j+1], sorted: [...sorted] }); }
+        }
+        sorted.add(n-1-i);
+      }
+      sorted.add(0);
+    }
+    else if (name === 'insertion') {
+      sorted.add(0);
+      for (let i = 1; i < n && !stopped; i++) {
+        let key = a[i], j = i - 1;
+        while (j >= 0 && a[j] > key && !stopped) {
+          cmps++; a[j+1] = a[j]; swpCount++;
+          await update({ swapping: [j, j+1], sorted: [...sorted] });
+          j--;
+        }
+        a[j+1] = key; sorted.add(i);
+        await update({ sorted: [...sorted] });
+      }
+    }
+    else if (name === 'selection') {
+      for (let i = 0; i < n - 1 && !stopped; i++) {
+        let minIdx = i;
+        for (let j = i+1; j < n && !stopped; j++) {
+          cmps++;
+          await update({ comparing: [j, minIdx], sorted: [...sorted] });
+          if (a[j] < a[minIdx]) minIdx = j;
+        }
+        if (minIdx !== i) { [a[i], a[minIdx]] = [a[minIdx], a[i]]; swpCount++; }
+        sorted.add(i);
+        await update({ sorted: [...sorted] });
+      }
+      sorted.add(n-1);
+    }
+    else if (name === 'merge') {
+      async function merge(l, m, r) {
+        const left = a.slice(l, m+1), right = a.slice(m+1, r+1);
+        let i=0, j=0, k=l;
+        while (i<left.length && j<right.length && !stopped) {
+          cmps++;
+          await update({ comparing: [l+i, m+1+j], sorted: [...sorted] });
+          if (left[i] <= right[j]) a[k++]=left[i++]; else { a[k++]=right[j++]; swpCount++; }
+        }
+        while (i<left.length) a[k++]=left[i++];
+        while (j<right.length) a[k++]=right[j++];
+        for (let x=l;x<=r;x++) sorted.add(x);
+        await update({ sorted: [...sorted] });
+      }
+      async function ms(l, r) {
+        if (l<r) { const m=Math.floor((l+r)/2); await ms(l,m); await ms(m+1,r); await merge(l,m,r); }
+      }
+      await ms(0, n-1);
+    }
+    else if (name === 'quick') {
+      async function part(low, high) {
+        const pivot = a[high]; let i = low - 1;
+        for (let j = low; j < high && !stopped; j++) {
+          cmps++;
+          await update({ comparing: [j, high], sorted: [...sorted] });
+          if (a[j] < pivot) { i++; [a[i],a[j]]=[a[j],a[i]]; swpCount++; await update({ swapping: [i,j], sorted: [...sorted] }); }
+        }
+        [a[i+1],a[high]]=[a[high],a[i+1]]; swpCount++;
+        await update({ swapping: [i+1,high], sorted: [...sorted] });
+        return i+1;
+      }
+      async function qs(low, high) {
+        if (low<high) { const pi=await part(low,high); sorted.add(pi); await qs(low,pi-1); await qs(pi+1,high); }
+        else if (low===high) sorted.add(low);
+      }
+      await qs(0, n-1);
+    }
+    else if (name === 'heap') {
+      async function heapify(sz, i) {
+        let lg=i, l=2*i+1, r=2*i+2;
+        if (l<sz && a[l]>a[lg]) lg=l;
+        if (r<sz && a[r]>a[lg]) lg=r;
+        if (lg!==i) { [a[i],a[lg]]=[a[lg],a[i]]; swpCount++; cmps++; await update({ swapping: [i,lg], sorted: [...sorted] }); await heapify(sz,lg); }
+      }
+      for (let i=Math.floor(n/2)-1; i>=0 && !stopped; i--) await heapify(n,i);
+      for (let i=n-1; i>0 && !stopped; i--) {
+        [a[0],a[i]]=[a[i],a[0]]; swpCount++; sorted.add(i);
+        await update({ swapping: [0,i], sorted: [...sorted] });
+        await heapify(i,0);
+      }
+      sorted.add(0);
+    }
+
+    if (!stopped) {
+      renderRaceBars({ sorted: Array.from({length:n},(_,i)=>i) });
+      badge.textContent = '✓ DONE';
+      badge.className = 'race-panel-badge badge-done';
+      // Check if winner
+      const allDone = document.querySelectorAll('.badge-done');
+      if (allDone.length === 1) {
+        badge.textContent = '🏆 WINNER';
+        badge.className = 'race-panel-badge badge-winner';
+      }
+    }
+  }
+
+  return {
+    el,
+    start: run,
+    stop() { stopped = true; }
+  };
+}
+
+// Init
+raceRandom();
+</script>
+</body>
+</html>
